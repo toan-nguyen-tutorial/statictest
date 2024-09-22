@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Điều khiển LED, Servo và Nhiệt độ</title>  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(to bottom right, #2c3e50, #3498db);
+      color: #fff;
+      text-align: center;
+      padding: 50px 20px;
+      margin: 0;
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 40px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+    }
+    .led-slider, .servo-slider {
+      -webkit-appearance: none;
+      height: 6px;
+      background: #fff;
+      border-radius: 5px;
+      outline: none;
+      margin: 20px auto;
+    }
+    .led-slider {
+      width: 30%;
+    }
+    .servo-slider {
+      width: 100%;
+    }
+    /* Thêm CSS cho thumb slider */
+    .led-slider::-webkit-slider-thumb, .servo-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #27a31c;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+      transition: background 0.3s, transform 0.3s;
+    }
+    .led-slider::-webkit-slider-thumb:hover, .servo-slider::-webkit-slider-thumb:hover {
+      background: #218838;
+      transform: scale(1.1);
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+    }
+    #temperatureInput {
+      margin-top: 20px;
+      width: 100px;
+      padding: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      text-align: center;
+      color: #000;
+      background-color: #ffd700;
+      border: 2px solid #fff;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Điều khiển LED, Servo và Nhiệt độ</h1>
+    
+    <h2>Điều khiển LED</h2>
+    <input type="range" id="ledSlider" class="led-slider" min="0" max="1" value="0" step="1" onchange="controlLED(this.value)">
+    <p id="ledStatus">Trạng thái: Tắt</p>
+    
+    <h2>Điều khiển Servo</h2>
+    <input type="range" id="servoSlider" class="servo-slider" min="0" max="180" value="0" onchange="setServoPosition(this.value)">
+    <p id="servoStatus">Góc Servo: 0 độ</p>
+    
+    <h2>Nhiệt độ từ LM35</h2>
+    <input type="text" id="temperatureInput" value="Đang tải..." readonly>
+
+    <p id="status">Trạng thái: Đang chờ...</p>
+  </div>
+
+  <script>
+    // Điều khiển LED
+    function controlLED(state) {
+      const ledState = state == 1 ? 'on' : 'off'; // Chuyển đổi giá trị slider thành 'on' hoặc 'off'
+      fetch(`/led/${ledState}`)
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('ledStatus').innerText = `Trạng thái: ${ledState === 'on' ? 'Bật' : 'Tắt'}`;
+        })
+        .catch(error => {
+          console.error('Lỗi:', error);
+          document.getElementById('status').innerText = 'Lỗi kết nối!';
+        });
+    }
+
+    // Điều khiển Servo
+    function setServoPosition(position) {
+      fetch(`/servo/${position}`)
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('servoStatus').innerText = `Góc Servo: ${position} độ`;
+        })
+        .catch(error => {
+          console.error('Lỗi:', error);
+        });
+    }
+
+    // Cập nhật nhiệt độ từ LM35
+    function updateTemperature() {
+      fetch('/temperature')
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById('temperatureInput').value = `${data} °C`;
+        })
+        .catch(error => {
+          console.error('Lỗi:', error);
+          document.getElementById('temperatureInput').value = 'Lỗi kết nối!';
+        });
+    }
+
+    // Cập nhật nhiệt độ mỗi 5 giây
+    setInterval(updateTemperature, 5000);
+    updateTemperature(); // Cập nhật ngay khi tải trang
+  </script>
+</body>
+</html>
